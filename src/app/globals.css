@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+html, body {
+  height: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  max-width: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+/* iOSでinput/textareaにフォーカスしたとき自動ズームしない（16px未満で発動するOSの挙動を防ぐ） */
+input, textarea, select {
+  font-size: 16px;
+}
+
+/* AdvancedMarker カスタムコンテンツのグレー背景を除去 */
+gmp-advanced-marker,
+gmp-advanced-marker > div,
+.gm-style-mf,
+.gm-style-mf > div,
+.IPAZAH-content-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Maps内部ラッパーの背景色が出るケースを追加で抑止 */
+.station-shop-advanced-marker,
+.station-shop-advanced-marker img,
+.gm-style .station-shop-advanced-marker,
+.gm-style .station-shop-advanced-marker > div {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
