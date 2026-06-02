@@ -9,7 +9,7 @@ import {
   useMap,
   type MapMouseEvent,
 } from "@vis.gl/react-google-maps";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddShopModal, { type ShopFormInput } from "./AddShopModal";
 import EditShopModal, { type StationShop } from "./EditShopModal";
 import { parseShopDetails } from "@/lib/shopTags";
@@ -177,21 +177,48 @@ function ShopMarker({
 
 function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; lng: number }) => void }) {
   const map = useMap();
+  const watchIdRef = useRef<number | null>(null);
+  const [tracking, setTracking] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   const handleLocate = () => {
     if (!navigator.geolocation) return;
+
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setTracking(false);
+      setLocating(false);
+      return;
+    }
+
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         map?.panTo(next);
         map?.setZoom(16);
         onLocate(next);
         setLocating(false);
+        setTracking(true);
       },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 }
+      () => {
+        setLocating(false);
+        setTracking(false);
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
   };
 
@@ -199,10 +226,10 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
     <button
       type="button"
       onClick={handleLocate}
-      className="absolute bottom-[calc(env(safe-area-inset-bottom)+3.25rem)] right-4 z-10 min-h-14 min-w-[96px] touch-manipulation rounded-full bg-white px-5 text-sm font-semibold shadow-lg transition hover:bg-gray-50 active:bg-gray-100"
-      title="現在地"
+      className="absolute bottom-[calc(env(safe-area-inset-bottom)+3.25rem)] right-4 z-10 min-h-14 min-w-[112px] touch-manipulation rounded-full bg-white px-5 text-sm font-semibold shadow-lg transition hover:bg-gray-50 active:bg-gray-100"
+      title={tracking ? "現在地追跡を停止" : "現在地追跡を開始"}
     >
-      {locating ? "取得中..." : "現在地"}
+      {locating ? "取得中..." : tracking ? "追跡中" : "現在地"}
     </button>
   );
 }
@@ -257,7 +284,10 @@ function GoogleMapInner({
         ))}
         {currentPos && (
           <AdvancedMarker position={currentPos}>
-            <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+            <div className="relative flex h-8 w-8 items-center justify-center">
+              <div className="absolute h-8 w-8 rounded-full bg-blue-500/20" />
+              <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+            </div>
           </AdvancedMarker>
         )}
         <CurrentLocationButton onLocate={setCurrentPos} />
