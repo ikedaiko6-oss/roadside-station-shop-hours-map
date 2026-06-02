@@ -22,6 +22,12 @@ interface Props {
   onSave: (input: ShopFormInput, imageFile: File | null) => Promise<void>;
 }
 
+function getRoadsideStationName(name: string | undefined): string {
+  const normalized = name?.replace(/\s+/g, " ").trim() ?? "";
+  if (!normalized.includes("道の駅")) return "";
+  return normalized;
+}
+
 export default function AddShopModal({ lat, lng, onClose, onSave }: Props) {
   const [stationName, setStationName] = useState("");
   const [shopName, setShopName] = useState("");
@@ -38,27 +44,93 @@ export default function AddShopModal({ lat, lng, onClose, onSave }: Props) {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [saving, setSaving] = useState(false);
   const [addressLoading, setAddressLoading] = useState(true);
+  const [stationLookupLoading, setStationLookupLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    let pendingLookups = 0;
+
+    const finishLookup = () => {
+      pendingLookups -= 1;
+      if (pendingLookups <= 0 && !cancelled) {
+        setAddressLoading(false);
+        setStationLookupLoading(false);
+      }
+    };
+
+    const applyStationName = (name: string | undefined) => {
+      const nextName = getRoadsideStationName(name);
+      if (!nextName || cancelled) return;
+      setStationName((prev) => (prev.trim() ? prev : nextName));
+    };
+
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const geocoder = new (window as any).google.maps.Geocoder();
+      const googleMaps = (window as any).google?.maps;
+      if (!googleMaps) {
+        queueMicrotask(() => {
+          if (!cancelled) {
+            setAddressLoading(false);
+            setStationLookupLoading(false);
+          }
+        });
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      pendingLookups += 1;
+      const geocoder = new googleMaps.Geocoder();
       geocoder.geocode(
         { location: { lat, lng } },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (results: any[], status: string) => {
+          if (cancelled) return;
           if (status === "OK" && results?.[0]) {
             let address: string = results[0].formatted_address;
             address = address.replace(/^日本、〒\d{3}-\d{4}\s*/, "").replace(/^日本、/, "");
             setMemo(`場所メモ: ${address}`);
+            const stationResult = results.find((result) =>
+              getRoadsideStationName(result?.name || result?.formatted_address)
+            );
+            applyStationName(stationResult?.name || stationResult?.formatted_address);
           }
-          setAddressLoading(false);
+          finishLookup();
         }
       );
+
+      if (googleMaps.places?.PlacesService) {
+        pendingLookups += 1;
+        const service = new googleMaps.places.PlacesService(document.createElement("div"));
+        service.nearbySearch(
+          {
+            location: new googleMaps.LatLng(lat, lng),
+            radius: 800,
+            keyword: "道の駅",
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (results: any[], status: string) => {
+            if (!cancelled && status === googleMaps.places.PlacesServiceStatus.OK && results?.length) {
+              const station = results.find((result) => getRoadsideStationName(result?.name)) ?? results[0];
+              applyStationName(station?.name);
+            }
+            finishLookup();
+          }
+        );
+      }
     } catch {
-      queueMicrotask(() => setAddressLoading(false));
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setAddressLoading(false);
+          setStationLookupLoading(false);
+        }
+      });
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [lat, lng]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +187,7 @@ export default function AddShopModal({ lat, lng, onClose, onSave }: Props) {
           <h2 className="text-lg font-bold text-gray-800 mb-1">お店の営業時間を登録</h2>
           <p className="text-xs text-gray-400 mb-4">
             位置: {lat.toFixed(5)}, {lng.toFixed(5)}
-            {addressLoading ? " / 周辺住所を確認中..." : ""}
+            {addressLoading || stationLookupLoading ? " / 周辺情報を確認中..." : ""}
           </p>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

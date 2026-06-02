@@ -30,6 +30,8 @@ interface Props {
   onDelete: (id: string) => Promise<void>;
 }
 
+const GOOGLE_MAP_LIBRARIES = ["places"];
+
 function formatDate(value: string | undefined): string {
   if (!value) return "未確認";
   return new Date(value).toLocaleDateString("ja-JP");
@@ -323,7 +325,7 @@ export default function StationShopMap(props: Props) {
   }
 
   return (
-    <APIProvider apiKey={apiKey} language="ja" region="JP">
+    <APIProvider apiKey={apiKey} language="ja" region="JP" libraries={GOOGLE_MAP_LIBRARIES}>
       <GoogleMapInner {...props} />
     </APIProvider>
   );
