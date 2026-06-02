@@ -275,6 +275,8 @@ export default function StationShopMap({
   const [currentPos, setCurrentPos] = useState<LatLng | null>(null);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const dragRef = useRef<{ start: Point; centerPoint: Point; moved: boolean } | null>(null);
+  const pointersRef = useRef(new Map<number, Point>());
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
 
   const topLeft = useMemo(() => {
     const centerPoint = latLngToPoint(center, zoom);
@@ -304,6 +306,18 @@ export default function StationShopMap({
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pointersRef.current.size >= 2) {
+      const [first, second] = Array.from(pointersRef.current.values());
+      pinchRef.current = {
+        distance: Math.hypot(second.x - first.x, second.y - first.y),
+        zoom,
+      };
+      dragRef.current = null;
+      return;
+    }
+
     dragRef.current = {
       start: { x: event.clientX, y: event.clientY },
       centerPoint: latLngToPoint(center, zoom),
@@ -312,6 +326,20 @@ export default function StationShopMap({
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pointersRef.current.has(event.pointerId)) {
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+
+    if (pointersRef.current.size >= 2 && pinchRef.current) {
+      const [first, second] = Array.from(pointersRef.current.values());
+      const nextDistance = Math.hypot(second.x - first.x, second.y - first.y);
+      if (pinchRef.current.distance > 0 && nextDistance > 0) {
+        const zoomDelta = Math.log2(nextDistance / pinchRef.current.distance);
+        setZoom(clamp(Math.round(pinchRef.current.zoom + zoomDelta), MIN_ZOOM, MAX_ZOOM));
+      }
+      return;
+    }
+
     const drag = dragRef.current;
     if (!drag) return;
     const dx = event.clientX - drag.start.x;
@@ -322,8 +350,13 @@ export default function StationShopMap({
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
+    pointersRef.current.delete(event.pointerId);
+    if (pointersRef.current.size < 2) {
+      pinchRef.current = null;
+    }
     dragRef.current = null;
-    if (!drag?.moved && isLoggedIn) {
+    if (!drag) return;
+    if (!drag.moved && isLoggedIn) {
       const pos = eventToLatLng(event.clientX, event.clientY);
       if (pos) setPendingPos(pos);
     }
@@ -370,6 +403,8 @@ export default function StationShopMap({
       onPointerUp={handlePointerUp}
       onPointerCancel={() => {
         dragRef.current = null;
+        pinchRef.current = null;
+        pointersRef.current.clear();
       }}
       onWheel={handleWheel}
     >
