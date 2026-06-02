@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { SHOP_TAG_OPTIONS, formatShopDetails, type ShopTagId } from "@/lib/shopTags";
+import BusinessHoursInput from "./BusinessHoursInput";
 import PhotoBlurEditor from "./PhotoBlurEditor";
 
 export interface ShopFormInput {
@@ -246,21 +247,8 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  営業時間 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={businessHours}
-                  onChange={(e) => setBusinessHours(e.target.value)}
-                  placeholder="例：9:00-17:00"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  maxLength={80}
-                  required
-                />
-              </div>
+            <BusinessHoursInput value={businessHours} onChange={setBusinessHours} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ラストオーダー</label>
                 <input
