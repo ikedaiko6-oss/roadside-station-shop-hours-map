@@ -329,6 +329,15 @@ export default function StationShopMap({
     }
   };
 
+  const stopMapGesture = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setZoom((current) => clamp(current + (event.deltaY < 0 ? 1 : -1), MIN_ZOOM, MAX_ZOOM));
+  };
+
   const handleZoom = (nextZoom: number) => {
     setZoom(clamp(nextZoom, MIN_ZOOM, MAX_ZOOM));
   };
@@ -362,6 +371,7 @@ export default function StationShopMap({
       onPointerCancel={() => {
         dragRef.current = null;
       }}
+      onWheel={handleWheel}
     >
       <TileLayer center={center} zoom={zoom} width={size.width} height={size.height} />
 
@@ -373,6 +383,7 @@ export default function StationShopMap({
             className="absolute z-10 -translate-x-1/2 -translate-y-full"
             style={{ left: point.x, top: point.y }}
             onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedShopId(shop.id);
@@ -409,18 +420,45 @@ export default function StationShopMap({
         </div>
       )}
 
-      <div className="absolute right-4 top-4 z-20 flex flex-col overflow-hidden rounded-lg bg-white shadow-lg">
-        <button className="h-10 w-10 text-xl hover:bg-gray-50" onClick={() => handleZoom(zoom + 1)} aria-label="拡大">
+      <div
+        className="absolute right-4 top-4 z-30 flex flex-col overflow-hidden rounded-lg bg-white shadow-lg"
+        onPointerDown={stopMapGesture}
+        onPointerUp={stopMapGesture}
+        onClick={stopMapGesture}
+      >
+        <button
+          type="button"
+          className="grid h-14 w-14 touch-manipulation place-items-center text-3xl font-semibold leading-none hover:bg-gray-50 active:bg-gray-100"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleZoom(zoom + 1);
+          }}
+          aria-label="拡大"
+        >
           +
         </button>
-        <button className="h-10 w-10 border-t border-gray-100 text-xl hover:bg-gray-50" onClick={() => handleZoom(zoom - 1)} aria-label="縮小">
+        <button
+          type="button"
+          className="grid h-14 w-14 touch-manipulation place-items-center border-t border-gray-100 text-3xl font-semibold leading-none hover:bg-gray-50 active:bg-gray-100"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleZoom(zoom - 1);
+          }}
+          aria-label="縮小"
+        >
           -
         </button>
       </div>
 
       <button
-        onClick={handleLocate}
-        className="absolute bottom-10 right-4 z-20 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-lg transition hover:bg-gray-50"
+        type="button"
+        onPointerDown={stopMapGesture}
+        onPointerUp={stopMapGesture}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleLocate();
+        }}
+        className="absolute bottom-[calc(env(safe-area-inset-bottom)+3.25rem)] right-4 z-30 min-h-14 min-w-[96px] touch-manipulation rounded-full bg-white px-5 text-sm font-semibold shadow-lg transition hover:bg-gray-50 active:bg-gray-100"
       >
         現在地
       </button>
