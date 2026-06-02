@@ -202,10 +202,11 @@ function ShopMarker({
   );
 }
 
-function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; lng: number }) => void }) {
+function CurrentLocationTracker() {
   const map = useMap();
   const watchIdRef = useRef<number | null>(null);
   const hasCenteredRef = useRef(false);
+  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null);
   const [tracking, setTracking] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -238,7 +239,7 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
           map?.setZoom(16);
           hasCenteredRef.current = true;
         }
-        onLocate(next);
+        setCurrentPos(next);
         setLocating(false);
         setTracking(true);
       },
@@ -256,14 +257,24 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleLocate}
-      className="absolute bottom-[calc(env(safe-area-inset-bottom)+3.25rem)] right-4 z-10 min-h-14 min-w-[112px] touch-manipulation rounded-full bg-white px-5 text-sm font-semibold shadow-lg transition hover:bg-gray-50 active:bg-gray-100"
-      title={tracking ? "現在地追跡を停止" : "現在地追跡を開始"}
-    >
-      {locating ? "取得中..." : tracking ? "追跡中" : "現在地"}
-    </button>
+    <>
+      {currentPos && (
+        <AdvancedMarker position={currentPos}>
+          <div className="relative flex h-8 w-8 items-center justify-center">
+            <div className="absolute h-8 w-8 rounded-full bg-blue-500/20" />
+            <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+          </div>
+        </AdvancedMarker>
+      )}
+      <button
+        type="button"
+        onClick={handleLocate}
+        className="absolute bottom-[calc(env(safe-area-inset-bottom)+3.25rem)] right-4 z-10 min-h-14 min-w-[112px] touch-manipulation rounded-full bg-white px-5 text-sm font-semibold shadow-lg transition hover:bg-gray-50 active:bg-gray-100"
+        title={tracking ? "現在地追跡を停止" : "現在地追跡を開始"}
+      >
+        {locating ? "取得中..." : tracking ? "追跡中" : "現在地"}
+      </button>
+    </>
   );
 }
 
@@ -277,7 +288,6 @@ function GoogleMapInner({
   onDelete,
 }: Props) {
   const [pendingPos, setPendingPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null);
   const center = useMemo(() => getInitialCenter(shops), [shops]);
 
   const handleMapClick = useCallback(
@@ -315,15 +325,7 @@ function GoogleMapInner({
             onDelete={onDelete}
           />
         ))}
-        {currentPos && (
-          <AdvancedMarker position={currentPos}>
-            <div className="relative flex h-8 w-8 items-center justify-center">
-              <div className="absolute h-8 w-8 rounded-full bg-blue-500/20" />
-              <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
-            </div>
-          </AdvancedMarker>
-        )}
-        <CurrentLocationButton onLocate={setCurrentPos} />
+        <CurrentLocationTracker />
       </Map>
 
       {pendingPos && (
