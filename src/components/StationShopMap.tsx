@@ -206,8 +206,8 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        map?.panTo(next);
         if (!hasCenteredRef.current) {
+          map?.panTo(next);
           map?.setZoom(16);
           hasCenteredRef.current = true;
         }
