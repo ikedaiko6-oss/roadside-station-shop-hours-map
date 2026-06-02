@@ -178,6 +178,7 @@ function ShopMarker({
 function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; lng: number }) => void }) {
   const map = useMap();
   const watchIdRef = useRef<number | null>(null);
+  const hasCenteredRef = useRef(false);
   const [tracking, setTracking] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -195,6 +196,7 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
+      hasCenteredRef.current = false;
       setTracking(false);
       setLocating(false);
       return;
@@ -205,7 +207,10 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         map?.panTo(next);
-        map?.setZoom(16);
+        if (!hasCenteredRef.current) {
+          map?.setZoom(16);
+          hasCenteredRef.current = true;
+        }
         onLocate(next);
         setLocating(false);
         setTracking(true);
@@ -217,6 +222,7 @@ function CurrentLocationButton({ onLocate }: { onLocate: (pos: { lat: number; ln
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
+        hasCenteredRef.current = false;
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
