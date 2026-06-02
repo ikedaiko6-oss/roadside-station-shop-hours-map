@@ -21,7 +21,7 @@ interface Props {
   lng: number;
   initialStationName?: string;
   onClose: () => void;
-  onSave: (input: ShopFormInput, imageFile: File | null) => Promise<void>;
+  onSave: (input: ShopFormInput, imageFile: File | null) => Promise<boolean>;
 }
 
 function getRoadsideStationName(name: string | undefined): string {
@@ -38,6 +38,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
   const [lastOrder, setLastOrder] = useState("");
   const [closedDays, setClosedDays] = useState("");
   const [confirmedAt, setConfirmedAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationMemo, setLocationMemo] = useState("");
   const [memo, setMemo] = useState("");
   const [tagIds, setTagIds] = useState<ShopTagId[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -45,6 +46,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
   const [blurEditorOpen, setBlurEditorOpen] = useState(false);
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedOnce, setSavedOnce] = useState(false);
   const [addressLoading, setAddressLoading] = useState(true);
   const [stationLookupLoading, setStationLookupLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +94,9 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
           if (status === "OK" && results?.[0]) {
             let address: string = results[0].formatted_address;
             address = address.replace(/^日本、〒\d{3}-\d{4}\s*/, "").replace(/^日本、/, "");
-            setMemo(`場所メモ: ${address}`);
+            const nextMemo = `場所メモ: ${address}`;
+            setLocationMemo(nextMemo);
+            setMemo((prev) => (prev.trim() ? prev : nextMemo));
             const stationResult = results.find((result) =>
               getRoadsideStationName(result?.name || result?.formatted_address)
             );
@@ -166,7 +170,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
     e.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
-    await onSave(
+    const saved = await onSave(
       {
         stationName: stationName.trim(),
         shopName: shopName.trim(),
@@ -180,6 +184,20 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
       imageFile
     );
     setSaving(false);
+    if (!saved) return;
+
+    setSavedOnce(true);
+    setShopName("");
+    setCategory("");
+    setBusinessHours("");
+    setLastOrder("");
+    setMemo(locationMemo);
+    setTagIds([]);
+    setImageFile(null);
+    setPreview(null);
+    setPrivacyChecked(false);
+    setBlurEditorOpen(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -191,6 +209,11 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
             位置: {lat.toFixed(5)}, {lng.toFixed(5)}
             {addressLoading || stationLookupLoading ? " / 周辺情報を確認中..." : ""}
           </p>
+          {savedOnce && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              登録しました。続けて同じ道の駅のお店を追加できます。
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -367,7 +390,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
                 onClick={onClose}
                 className="flex-1 border border-gray-300 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
               >
-                キャンセル
+                {savedOnce ? "終了" : "キャンセル"}
               </button>
               <button
                 type="submit"

@@ -246,13 +246,13 @@ export default function HomeClient({ shops: initialShops, user }: Props) {
     async (lat: number, lng: number, input: ShopFormInput, imageFile: File | null) => {
       if (!supabaseConfigured) {
         showToast("Supabase環境変数が未設定です");
-        return;
+        return false;
       }
 
       let imageUrl: string | null = null;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
-        if (!imageUrl) return;
+        if (!imageUrl) return false;
       }
 
       const now = new Date().toISOString();
@@ -271,12 +271,14 @@ export default function HomeClient({ shops: initialShops, user }: Props) {
 
       if (error) {
         showToast("登録に失敗しました: " + error.message);
-        return;
+        return false;
       }
       if (data) {
         setShops((prev) => [mapShopRow(data as unknown as Record<string, unknown>), ...prev]);
         showToast("お店の営業時間を登録しました");
+        return true;
       }
+      return false;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [supabase, currentUserId, supabaseConfigured]

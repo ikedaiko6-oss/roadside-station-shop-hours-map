@@ -25,7 +25,7 @@ interface Props {
   isLoggedIn: boolean;
   currentUserId: string | null;
   isAdmin: boolean;
-  onAdd: (lat: number, lng: number, input: ShopFormInput, imageFile: File | null) => Promise<void>;
+  onAdd: (lat: number, lng: number, input: ShopFormInput, imageFile: File | null) => Promise<boolean>;
   onUpdate: (id: string, input: ShopFormInput, imageFile: File | null) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
@@ -299,9 +299,8 @@ function GoogleMapInner({
   );
 
   const handleSave = async (input: ShopFormInput, imageFile: File | null) => {
-    if (!pendingPos) return;
-    await onAdd(pendingPos.lat, pendingPos.lng, input, imageFile);
-    setPendingPos(null);
+    if (!pendingPos) return false;
+    return onAdd(pendingPos.lat, pendingPos.lng, input, imageFile);
   };
 
   return (
