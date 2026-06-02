@@ -45,6 +45,31 @@ function getInitialCenter(shops: StationShopRecord[]) {
   };
 }
 
+function getDistanceMeters(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
+  const earthRadiusMeters = 6371000;
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLng = toRadians(to.lng - from.lng);
+  const lat1 = toRadians(from.lat);
+  const lat2 = toRadians(to.lat);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getNearbyStationName(shops: StationShopRecord[], pos: { lat: number; lng: number }) {
+  const nearest = shops
+    .filter((shop) => shop.stationName.trim())
+    .map((shop) => ({
+      stationName: shop.stationName,
+      distance: getDistanceMeters(pos, { lat: shop.lat, lng: shop.lng }),
+    }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  return nearest && nearest.distance <= 1000 ? nearest.stationName : "";
+}
+
 function ShopMarker({
   shop,
   canManage,
@@ -305,6 +330,7 @@ function GoogleMapInner({
         <AddShopModal
           lat={pendingPos.lat}
           lng={pendingPos.lng}
+          initialStationName={getNearbyStationName(shops, pendingPos)}
           onClose={() => setPendingPos(null)}
           onSave={handleSave}
         />

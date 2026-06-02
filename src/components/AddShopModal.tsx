@@ -18,6 +18,7 @@ export interface ShopFormInput {
 interface Props {
   lat: number;
   lng: number;
+  initialStationName?: string;
   onClose: () => void;
   onSave: (input: ShopFormInput, imageFile: File | null) => Promise<void>;
 }
@@ -28,8 +29,8 @@ function getRoadsideStationName(name: string | undefined): string {
   return normalized;
 }
 
-export default function AddShopModal({ lat, lng, onClose, onSave }: Props) {
-  const [stationName, setStationName] = useState("");
+export default function AddShopModal({ lat, lng, initialStationName = "", onClose, onSave }: Props) {
+  const [stationName, setStationName] = useState(initialStationName);
   const [shopName, setShopName] = useState("");
   const [category, setCategory] = useState("");
   const [businessHours, setBusinessHours] = useState("");
