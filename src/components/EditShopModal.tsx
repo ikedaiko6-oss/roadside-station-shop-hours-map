@@ -8,6 +8,7 @@ import {
   type ShopTagId,
 } from "@/lib/shopTags";
 import BusinessHoursInput from "./BusinessHoursInput";
+import ClosedDaysInput from "./ClosedDaysInput";
 import PhotoBlurEditor from "./PhotoBlurEditor";
 import type { ShopFormInput } from "./AddShopModal";
 
@@ -206,17 +207,8 @@ export default function EditShopModal({ shop, onClose, onSave }: Props) {
                   maxLength={40}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">定休日</label>
-                <input
-                  type="text"
-                  value={closedDays}
-                  onChange={(e) => setClosedDays(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  maxLength={80}
-                />
-              </div>
             </div>
+            <ClosedDaysInput value={closedDays} onChange={setClosedDays} />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">特徴タグ（任意）</label>
               <div className="grid grid-cols-2 gap-2">
