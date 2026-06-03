@@ -37,7 +37,7 @@ export default function EditShopModal({ shop, onClose, onSave }: Props) {
   const parsedDetails = parseShopDetails(shop.details);
   const [stationName, setStationName] = useState(shop.stationName);
   const [shopName, setShopName] = useState(shop.shopName);
-  const [category, setCategory] = useState(shop.category ?? "");
+  const category = shop.category ?? "";
   const [businessHours, setBusinessHours] = useState(shop.businessHours);
   const [lastOrder, setLastOrder] = useState(shop.lastOrder ?? "");
   const [closedDays, setClosedDays] = useState(shop.closedDays ?? "");
@@ -173,14 +173,73 @@ export default function EditShopModal({ shop, onClose, onSave }: Props) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ（任意）</label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  maxLength={40}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">営業時間表の写真（任意）</label>
+                {preview ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <img
+                        src={preview}
+                        alt="プレビュー"
+                        className="w-full h-36 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setPreview(null);
+                          setPrivacyChecked(false);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
+                      >
+                        x
+                      </button>
+                    </div>
+                    {(imageFile || shop.imageUrl) && (
+                      <button
+                        type="button"
+                        onClick={startBlurEditor}
+                        disabled={imageLoading}
+                        className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+                      >
+                        {imageLoading ? "写真を準備中..." : "この写真をモザイク編集"}
+                      </button>
+                    )}
+                    {imageError && (
+                      <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        {imageError}
+                      </p>
+                    )}
+                    {imageFile && (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+                        <p className="text-sm font-medium text-amber-900">保存前に必ず確認してください</p>
+                        <p className="mt-1 text-xs text-amber-800">
+                          人の顔、車のナンバー、個人情報が写っている場合はモザイクしてください。
+                        </p>
+                        <label className="mt-2 flex items-start gap-2 text-sm text-amber-950">
+                          <input
+                            type="checkbox"
+                            checked={privacyChecked}
+                            onChange={(e) => setPrivacyChecked(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 accent-amber-600"
+                          />
+                          <span>写り込みを確認しました。必要な部分は隠しました。</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label className="w-full min-h-11 border-2 border-dashed border-gray-300 rounded-lg py-2 text-sm text-gray-400 hover:border-emerald-400 hover:text-emerald-500 transition flex items-center justify-center gap-2 cursor-pointer">
+                    写真を追加
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -237,75 +296,6 @@ export default function EditShopModal({ shop, onClose, onSave }: Props) {
                 rows={2}
                 maxLength={240}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">営業時間表の写真（任意）</label>
-              {preview ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <img
-                      src={preview}
-                      alt="プレビュー"
-                      className="w-full h-36 object-cover rounded-lg border border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImageFile(null);
-                        setPreview(null);
-                        setPrivacyChecked(false);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }}
-                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
-                    >
-                      x
-                    </button>
-                  </div>
-                  {(imageFile || shop.imageUrl) && (
-                    <button
-                      type="button"
-                      onClick={startBlurEditor}
-                      disabled={imageLoading}
-                      className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
-                    >
-                      {imageLoading ? "写真を準備中..." : "この写真をモザイク編集"}
-                    </button>
-                  )}
-                  {imageError && (
-                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                      {imageError}
-                    </p>
-                  )}
-                  {imageFile && (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
-                      <p className="text-sm font-medium text-amber-900">保存前に必ず確認してください</p>
-                      <p className="mt-1 text-xs text-amber-800">
-                        人の顔、車のナンバー、個人情報が写っている場合はモザイクしてください。
-                      </p>
-                      <label className="mt-2 flex items-start gap-2 text-sm text-amber-950">
-                        <input
-                          type="checkbox"
-                          checked={privacyChecked}
-                          onChange={(e) => setPrivacyChecked(e.target.checked)}
-                          className="mt-0.5 h-4 w-4 accent-amber-600"
-                        />
-                        <span>写り込みを確認しました。必要な部分は隠しました。</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <label className="w-full border-2 border-dashed border-gray-300 rounded-lg py-4 text-sm text-gray-400 hover:border-emerald-400 hover:text-emerald-500 transition flex items-center justify-center gap-2 cursor-pointer">
-                  写真を追加
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
             </div>
             <div className="flex gap-2 pt-1">
               <button

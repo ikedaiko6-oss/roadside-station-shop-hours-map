@@ -34,7 +34,6 @@ function getRoadsideStationName(name: string | undefined): string {
 export default function AddShopModal({ lat, lng, initialStationName = "", onClose, onSave }: Props) {
   const [stationName, setStationName] = useState(initialStationName);
   const [shopName, setShopName] = useState("");
-  const [category, setCategory] = useState("");
   const [businessHours, setBusinessHours] = useState("");
   const [lastOrder, setLastOrder] = useState("");
   const [closedDays, setClosedDays] = useState("");
@@ -175,7 +174,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
       {
         stationName: stationName.trim(),
         shopName: shopName.trim(),
-        category: category.trim(),
+        category: "",
         businessHours: businessHours.trim(),
         lastOrder: lastOrder.trim(),
         closedDays: closedDays.trim(),
@@ -189,7 +188,6 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
 
     setSavedOnce(true);
     setShopName("");
-    setCategory("");
     setBusinessHours("");
     setLastOrder("");
     setMemo(locationMemo);
@@ -248,15 +246,63 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ（任意）</label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="例：食堂、カフェ、直売所"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  maxLength={40}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">営業時間表の写真（任意）</label>
+                {preview ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <img
+                        src={preview}
+                        alt="プレビュー"
+                        className="w-full h-36 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setPreview(null);
+                          setPrivacyChecked(false);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
+                      >
+                        x
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setBlurEditorOpen(true)}
+                      className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+                    >
+                      写真の一部を隠す
+                    </button>
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+                      <p className="text-sm font-medium text-amber-900">投稿前に必ず確認してください</p>
+                      <p className="mt-1 text-xs text-amber-800">
+                        人の顔、車のナンバー、個人情報が写っている場合はモザイクしてください。
+                      </p>
+                      <label className="mt-2 flex items-start gap-2 text-sm text-amber-950">
+                        <input
+                          type="checkbox"
+                          checked={privacyChecked}
+                          onChange={(e) => setPrivacyChecked(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 accent-amber-600"
+                        />
+                        <span>写り込みを確認しました。必要な部分は隠しました。</span>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="w-full min-h-11 border-2 border-dashed border-gray-300 rounded-lg py-2 text-sm text-gray-400 hover:border-emerald-400 hover:text-emerald-500 transition flex items-center justify-center gap-2 cursor-pointer">
+                    写真を追加
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -315,65 +361,6 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
                 rows={2}
                 maxLength={240}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">営業時間表の写真（任意）</label>
-              {preview ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <img
-                      src={preview}
-                      alt="プレビュー"
-                      className="w-full h-36 object-cover rounded-lg border border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImageFile(null);
-                        setPreview(null);
-                        setPrivacyChecked(false);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }}
-                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
-                    >
-                      x
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setBlurEditorOpen(true)}
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
-                  >
-                    写真の一部を隠す
-                  </button>
-                  <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
-                    <p className="text-sm font-medium text-amber-900">投稿前に必ず確認してください</p>
-                    <p className="mt-1 text-xs text-amber-800">
-                      人の顔、車のナンバー、個人情報が写っている場合はモザイクしてください。
-                    </p>
-                    <label className="mt-2 flex items-start gap-2 text-sm text-amber-950">
-                      <input
-                        type="checkbox"
-                        checked={privacyChecked}
-                        onChange={(e) => setPrivacyChecked(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 accent-amber-600"
-                      />
-                      <span>写り込みを確認しました。必要な部分は隠しました。</span>
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <label className="w-full border-2 border-dashed border-gray-300 rounded-lg py-4 text-sm text-gray-400 hover:border-emerald-400 hover:text-emerald-500 transition flex items-center justify-center gap-2 cursor-pointer">
-                  写真を追加
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
             </div>
             <div className="flex gap-2 pt-1">
               <button
