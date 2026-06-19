@@ -52,6 +52,18 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!initialStationName.trim()) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setStationName((prev) => (prev.trim() ? prev : initialStationName));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialStationName]);
+
+  useEffect(() => {
     let cancelled = false;
     let pendingLookups = 0;
 

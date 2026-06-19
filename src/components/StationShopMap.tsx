@@ -70,6 +70,12 @@ function getNearbyStationName(shops: StationShopRecord[], pos: { lat: number; ln
   return nearest && nearest.distance <= 1000 ? nearest.stationName : "";
 }
 
+function getRoadsideStationName(name: string | undefined): string {
+  const normalized = name?.replace(/\s+/g, " ").trim() ?? "";
+  if (!normalized.includes("道の駅")) return "";
+  return normalized;
+}
+
 function ShopMarker({
   shop,
   canManage,
@@ -287,15 +293,33 @@ function GoogleMapInner({
   onUpdate,
   onDelete,
 }: Props) {
-  const [pendingPos, setPendingPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [pendingPos, setPendingPos] = useState<{ lat: number; lng: number; stationName?: string } | null>(null);
   const center = useMemo(() => getInitialCenter(shops), [shops]);
 
   const handleMapClick = useCallback(
     (event: MapMouseEvent) => {
       if (!isLoggedIn || !event.detail.latLng) return;
-      setPendingPos({ lat: event.detail.latLng.lat, lng: event.detail.latLng.lng });
+      const nextPos = { lat: event.detail.latLng.lat, lng: event.detail.latLng.lng };
+      const fallbackStationName = getNearbyStationName(shops, nextPos);
+      setPendingPos({ ...nextPos, stationName: fallbackStationName });
+
+      if (!event.detail.placeId) return;
+      const places = google.maps.places;
+      if (!places?.PlacesService) return;
+
+      const service = new places.PlacesService(document.createElement("div"));
+      service.getDetails({ placeId: event.detail.placeId, fields: ["name"] }, (place, status) => {
+        if (status !== places.PlacesServiceStatus.OK) return;
+        const stationName = getRoadsideStationName(place?.name);
+        if (!stationName) return;
+        setPendingPos((current) =>
+          current && current.lat === nextPos.lat && current.lng === nextPos.lng
+            ? { ...current, stationName }
+            : current
+        );
+      });
     },
-    [isLoggedIn]
+    [isLoggedIn, shops]
   );
 
   const handleSave = async (input: ShopFormInput, imageFile: File | null) => {
@@ -311,7 +335,7 @@ function GoogleMapInner({
         defaultZoom={shops.length > 0 ? 13 : 8}
         gestureHandling="greedy"
         disableDefaultUI={false}
-        clickableIcons={false}
+        clickableIcons={true}
         className="h-full w-full"
         onClick={handleMapClick}
       >
@@ -331,7 +355,7 @@ function GoogleMapInner({
         <AddShopModal
           lat={pendingPos.lat}
           lng={pendingPos.lng}
-          initialStationName={getNearbyStationName(shops, pendingPos)}
+          initialStationName={pendingPos.stationName ?? getNearbyStationName(shops, pendingPos)}
           onClose={() => setPendingPos(null)}
           onSave={handleSave}
         />
