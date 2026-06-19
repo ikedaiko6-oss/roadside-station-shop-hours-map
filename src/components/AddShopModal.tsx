@@ -214,8 +214,16 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
   return (
     <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-1">お店の営業時間を登録</h2>
+        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="登録画面を閉じる"
+            className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-2xl leading-none text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            ×
+          </button>
+          <h2 className="pr-12 text-lg font-bold text-gray-800 mb-1">お店の営業時間を登録</h2>
           <p className="text-xs text-gray-400 mb-4">
             位置: {lat.toFixed(5)}, {lng.toFixed(5)}
             {addressLoading || stationLookupLoading ? " / 周辺情報を確認中..." : ""}
