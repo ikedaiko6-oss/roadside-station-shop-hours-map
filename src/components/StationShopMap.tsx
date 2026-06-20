@@ -215,6 +215,7 @@ function CurrentLocationTracker() {
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null);
   const [tracking, setTracking] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   useEffect(() => {
     return () => {
@@ -224,8 +225,22 @@ function CurrentLocationTracker() {
     };
   }, []);
 
+  const getLocationErrorMessage = (error?: GeolocationPositionError) => {
+    if (!error) return "この端末では位置情報を利用できません。";
+    if (error.code === error.PERMISSION_DENIED) {
+      return "位置情報を取得できませんでした。ブラウザまたは端末の設定で位置情報の許可を確認してください。";
+    }
+    if (error.code === error.TIMEOUT) {
+      return "位置情報の取得に時間がかかっています。電波状況の良い場所で再度お試しください。";
+    }
+    return "位置情報を取得できませんでした。少し時間をおいて再度お試しください。";
+  };
+
   const handleLocate = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setLocationError(getLocationErrorMessage());
+      return;
+    }
 
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -233,10 +248,12 @@ function CurrentLocationTracker() {
       hasCenteredRef.current = false;
       setTracking(false);
       setLocating(false);
+      setLocationError("");
       return;
     }
 
     setLocating(true);
+    setLocationError("");
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -248,10 +265,12 @@ function CurrentLocationTracker() {
         setCurrentPos(next);
         setLocating(false);
         setTracking(true);
+        setLocationError("");
       },
-      () => {
+      (error) => {
         setLocating(false);
         setTracking(false);
+        setLocationError(getLocationErrorMessage(error));
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
@@ -280,6 +299,21 @@ function CurrentLocationTracker() {
       >
         {locating ? "取得中..." : tracking ? "追跡中" : "現在地"}
       </button>
+      {locationError && (
+        <div className="absolute bottom-[calc(env(safe-area-inset-bottom)+7.25rem)] right-4 z-10 max-w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-lg">
+          <div className="flex items-start gap-3">
+            <p className="leading-relaxed">{locationError}</p>
+            <button
+              type="button"
+              onClick={() => setLocationError("")}
+              aria-label="位置情報エラーを閉じる"
+              className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xl leading-none text-red-500 hover:bg-red-50"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -211,6 +211,13 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key !== "Enter") return;
+    const target = e.target;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLButtonElement) return;
+    e.preventDefault();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
@@ -233,7 +240,7 @@ export default function AddShopModal({ lat, lng, initialStationName = "", onClos
               登録しました。続けて同じ道の駅のお店を追加できます。
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
